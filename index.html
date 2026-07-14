@@ -32,6 +32,9 @@
     --green-bg: #eaf3de;
     --green-text: #27500a;
 
+    --blue-bg: #e6f1fb;
+    --blue-text: #0c447c;
+
     --track-empty: #e4e1d7;
     --radius: 10px;
   }
@@ -234,6 +237,22 @@
   .badge-gray { background: var(--gray-bg); color: var(--gray-text); border: 1px solid var(--gray-border); }
   .badge-amber { background: var(--amber-bg); color: var(--amber-text); }
   .badge-green { background: var(--green-bg); color: var(--green-text); }
+  .badge-blue { background: var(--blue-bg); color: var(--blue-text); }
+
+  .branch-row .group-name {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--text-muted);
+  }
+  .branch-row .group-name i { font-size: 13px; }
+
+  .legend-note {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: -1.25rem 0 1.5rem;
+    padding: 0 2px;
+  }
 
   .edit-btn {
     flex: 0 0 auto;
@@ -356,6 +375,8 @@
     </div>
   </div>
 
+  <p class="legend-note">进入初设目录阶段后，「建设成果梳理」作为并行模块与其同步推进，独立记录进度</p>
+
   <div class="cards" id="cards-container">
     <p class="empty-msg">正在加载课题组数据…</p>
   </div>
@@ -384,7 +405,7 @@ const SINGLE_SUBJECTS = ['数学', '物理', '天文'];
 const STAGE_LABEL = { 1: '沟通预算', 2: '建设目录', 3: '初设目录' };
 
 let groups = [];
-let editingId = null;
+let editingKey = null;
 
 function escapeHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -419,15 +440,15 @@ function trackHTML(stage, subStatus) {
   return parts.join(arrow);
 }
 
-function rowViewHTML(item) {
+function mainViewHTML(item) {
   return `
     <div class="track-wrap">${trackHTML(item.stage, item.sub_status)}</div>
     <span class="badge ${badgeClass(item.stage)}">${badgeText(item.stage, item.sub_status)}</span>
-    <button class="edit-btn" data-id="${item.id}" aria-label="编辑进度"><i class="ti ti-edit"></i></button>
+    <button class="edit-btn" data-id="${item.id}" data-field="main" aria-label="编辑进度"><i class="ti ti-edit"></i></button>
   `;
 }
 
-function rowEditHTML(item) {
+function mainEditHTML(item) {
   return `
     <div class="edit-form">
       <select class="stage-select" data-id="${item.id}">
@@ -439,19 +460,55 @@ function rowEditHTML(item) {
         <option value="ing" ${item.sub_status === 'ing' ? 'selected' : ''}>进行中</option>
         <option value="done" ${item.sub_status === 'done' ? 'selected' : ''}>已完成</option>
       </select>
-      <button class="save-btn" data-id="${item.id}">保存</button>
-      <button class="cancel-btn" data-id="${item.id}">取消</button>
+      <button class="save-btn" data-id="${item.id}" data-field="main">保存</button>
+      <button class="cancel-btn" data-id="${item.id}" data-field="main">取消</button>
     </div>
   `;
 }
 
+function achvViewHTML(item) {
+  const status = item.achievement_status;
+  const cls = status ? 'badge-blue' : 'badge-gray';
+  const label = status === 'done' ? '已完成' : status === 'ing' ? '进行中' : '未开始';
+  return `
+    <div class="track-wrap"></div>
+    <span class="badge ${cls}">${label}</span>
+    <button class="edit-btn" data-id="${item.id}" data-field="achv" aria-label="编辑建设成果梳理进度"><i class="ti ti-edit"></i></button>
+  `;
+}
+
+function achvEditHTML(item) {
+  const status = item.achievement_status ?? '';
+  return `
+    <div class="edit-form">
+      <select class="achv-select" data-id="${item.id}">
+        <option value="" ${status === '' ? 'selected' : ''}>未开始</option>
+        <option value="ing" ${status === 'ing' ? 'selected' : ''}>进行中</option>
+        <option value="done" ${status === 'done' ? 'selected' : ''}>已完成</option>
+      </select>
+      <button class="save-btn" data-id="${item.id}" data-field="achv">保存</button>
+      <button class="cancel-btn" data-id="${item.id}" data-field="achv">取消</button>
+    </div>
+  `;
+}
+
+function branchRowHTML(item) {
+  const body = editingKey === `${item.id}|achv` ? achvEditHTML(item) : achvViewHTML(item);
+  return `<div class="row branch-row">
+    <span class="group-name"><i class="ti ti-corner-down-right"></i>建设成果梳理</span>
+    ${body}
+  </div>`;
+}
+
 function multiRowHTML(item) {
-  const body = editingId === item.id ? rowEditHTML(item) : rowViewHTML(item);
+  const body = editingKey === `${item.id}|main` ? mainEditHTML(item) : mainViewHTML(item);
   const nameLabel = item.group_name ? `${item.group_name}（${item.lead}）` : item.lead;
-  return `<div class="row">
+  let html = `<div class="row">
     <span class="group-name">${escapeHtml(nameLabel)}</span>
     ${body}
   </div>`;
+  if (item.stage === 3) html += branchRowHTML(item);
+  return html;
 }
 
 function multiCardHTML(subject, items) {
@@ -463,11 +520,13 @@ function multiCardHTML(subject, items) {
 }
 
 function singleCardHTML(subject, item) {
-  const body = editingId === item.id ? rowEditHTML(item) : rowViewHTML(item);
+  const body = editingKey === `${item.id}|main` ? mainEditHTML(item) : mainViewHTML(item);
+  const branch = item.stage === 3 ? branchRowHTML(item) : '';
   return `<div class="card single-card">
     <div class="card-head"><i class="ti ${SUBJECT_ICON[subject]}"></i><span class="name">${subject}</span></div>
     <p class="lead">${escapeHtml(item.lead)}</p>
     <div class="single-body">${body}</div>
+    ${branch}
   </div>`;
 }
 
@@ -506,32 +565,57 @@ function render() {
 
 function attachHandlers() {
   document.querySelectorAll('.edit-btn').forEach(btn => {
-    btn.addEventListener('click', () => { editingId = btn.dataset.id; render(); });
+    btn.addEventListener('click', () => {
+      editingKey = `${btn.dataset.id}|${btn.dataset.field}`;
+      render();
+    });
   });
   document.querySelectorAll('.cancel-btn').forEach(btn => {
-    btn.addEventListener('click', () => { editingId = null; render(); });
+    btn.addEventListener('click', () => { editingKey = null; render(); });
   });
   document.querySelectorAll('.save-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       const id = btn.dataset.id;
-      const stageVal = parseInt(document.querySelector(`.stage-select[data-id="${id}"]`).value, 10);
-      const statusVal = document.querySelector(`.status-select[data-id="${id}"]`).value;
+      const field = btn.dataset.field;
+      const originalText = btn.textContent;
       btn.disabled = true;
       btn.textContent = '保存中';
-      const { error } = await supabase.rpc('update_group_progress', {
-        p_id: id, p_stage: stageVal, p_sub_status: statusVal
-      });
-      if (error) {
-        alert('保存失败：' + error.message);
-        btn.disabled = false;
-        btn.textContent = '保存';
-        return;
+
+      if (field === 'main') {
+        const stageVal = parseInt(document.querySelector(`.stage-select[data-id="${id}"]`).value, 10);
+        const statusVal = document.querySelector(`.status-select[data-id="${id}"]`).value;
+        const { error } = await supabase.rpc('update_group_progress', {
+          p_id: id, p_stage: stageVal, p_sub_status: statusVal
+        });
+        if (error) {
+          alert('保存失败：' + error.message);
+          btn.disabled = false;
+          btn.textContent = originalText;
+          return;
+        }
+        const idx = groups.findIndex(g => g.id === id);
+        if (idx >= 0) {
+          groups[idx] = { ...groups[idx], stage: stageVal, sub_status: statusVal, updated_at: new Date().toISOString() };
+        }
+      } else {
+        const raw = document.querySelector(`.achv-select[data-id="${id}"]`).value;
+        const statusVal = raw === '' ? null : raw;
+        const { error } = await supabase.rpc('update_achievement_review', {
+          p_id: id, p_status: statusVal
+        });
+        if (error) {
+          alert('保存失败：' + error.message);
+          btn.disabled = false;
+          btn.textContent = originalText;
+          return;
+        }
+        const idx = groups.findIndex(g => g.id === id);
+        if (idx >= 0) {
+          groups[idx] = { ...groups[idx], achievement_status: statusVal, updated_at: new Date().toISOString() };
+        }
       }
-      const idx = groups.findIndex(g => g.id === id);
-      if (idx >= 0) {
-        groups[idx] = { ...groups[idx], stage: stageVal, sub_status: statusVal, updated_at: new Date().toISOString() };
-      }
-      editingId = null;
+
+      editingKey = null;
       render();
     });
   });
@@ -559,7 +643,8 @@ supabase
     } else {
       groups.push(payload.new);
     }
-    if (editingId === null || editingId !== incoming.id) render();
+    const editingRowId = editingKey ? editingKey.split('|')[0] : null;
+    if (editingRowId !== incoming.id) render();
   })
   .subscribe();
 
