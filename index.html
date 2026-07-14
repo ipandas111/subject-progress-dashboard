@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>六科目课题进度看板</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.44.0/dist/tabler-icons.min.css">
 <style>
@@ -420,11 +423,9 @@
 </div>
 
 <script type="module">
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
 const SUPABASE_URL = 'https://zupdhiqydqjwmqegqczz.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_xn0bVmqERGws5Rr2o08bSA_tS7yrm1O';
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+let supabase = null;
 
 const SUBJECT_ICON = {
   '化学': 'ti-flask',
@@ -704,25 +705,38 @@ async function loadData() {
   render();
 }
 
-supabase
-  .channel('groups-changes')
-  .on('postgres_changes', { event: '*', schema: 'public', table: 'groups' }, payload => {
-    const incoming = payload.new && Object.keys(payload.new).length ? payload.new : payload.old;
-    const idx = groups.findIndex(g => g.id === incoming.id);
-    if (payload.eventType === 'DELETE') {
-      if (idx >= 0) groups.splice(idx, 1);
-    } else if (idx >= 0) {
-      groups[idx] = payload.new;
-    } else {
-      groups.push(payload.new);
-    }
-    const editingRowId = editingKey ? editingKey.split('|')[0] : null;
-    if (editingRowId !== incoming.id) render();
-  })
-  .subscribe();
-
+// KPI cards have no server dependency, so bind them immediately rather than
+// waiting on the Supabase module fetch below — otherwise clicks during that
+// network round-trip would silently do nothing.
 initKpiCards();
-loadData();
+
+async function boot() {
+  const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+  supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  supabase
+    .channel('groups-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'groups' }, payload => {
+      const incoming = payload.new && Object.keys(payload.new).length ? payload.new : payload.old;
+      const idx = groups.findIndex(g => g.id === incoming.id);
+      if (payload.eventType === 'DELETE') {
+        if (idx >= 0) groups.splice(idx, 1);
+      } else if (idx >= 0) {
+        groups[idx] = payload.new;
+      } else {
+        groups.push(payload.new);
+      }
+      const editingRowId = editingKey ? editingKey.split('|')[0] : null;
+      if (editingRowId !== incoming.id) render();
+    })
+    .subscribe();
+
+  await loadData();
+}
+
+boot().catch(() => {
+  document.getElementById('cards-container').innerHTML = '<p class="empty-msg">数据加载失败，请刷新重试。</p>';
+});
 </script>
 </body>
 </html>
