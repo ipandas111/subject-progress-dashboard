@@ -105,6 +105,38 @@
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 1rem 1.1rem;
+    cursor: pointer;
+  }
+  .kpi-card:hover { border-color: var(--border-strong); }
+  .kpi-card.active { background: var(--surface-muted); border-color: var(--border-strong); }
+
+  .kpi-detail {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.9rem 1.1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .kpi-detail-title {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 0 0 10px;
+  }
+
+  .kpi-detail-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .kpi-detail-chip {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: var(--radius);
+    background: var(--surface-muted);
+    color: var(--text-primary);
+    white-space: nowrap;
   }
 
   .kpi-card p.label {
@@ -343,23 +375,25 @@
   </div>
 
   <div class="kpi-grid">
-    <div class="kpi-card">
+    <div class="kpi-card" data-stage="all">
       <p class="label">课题组总数</p>
       <p class="value" id="kpi-total">–</p>
     </div>
-    <div class="kpi-card">
+    <div class="kpi-card" data-stage="1">
       <p class="label"><span class="dot-sm" style="background:var(--gray-fill);"></span>沟通预算</p>
       <p class="value" id="kpi-stage1">–</p>
     </div>
-    <div class="kpi-card">
+    <div class="kpi-card" data-stage="2">
       <p class="label"><span class="dot-sm" style="background:var(--amber-fill);"></span>建设目录</p>
       <p class="value" id="kpi-stage2">–</p>
     </div>
-    <div class="kpi-card">
+    <div class="kpi-card" data-stage="3">
       <p class="label"><span class="dot-sm" style="background:var(--green-fill);"></span>初设目录</p>
       <p class="value" id="kpi-stage3">–</p>
     </div>
   </div>
+
+  <div id="kpi-detail" class="kpi-detail" style="display:none;"></div>
 
   <div class="legend-row">
     <div class="legend-stages">
@@ -406,6 +440,7 @@ const STAGE_LABEL = { 1: '沟通预算', 2: '建设目录', 3: '初设目录' };
 
 let groups = [];
 let editingKey = null;
+let selectedStage = null;
 
 function escapeHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -553,6 +588,8 @@ function render() {
 
   document.getElementById('cards-container').innerHTML = html || '<p class="empty-msg">暂无数据</p>';
   attachHandlers();
+  updateKpiActiveStates();
+  renderKpiDetail();
 
   const maxUpdated = groups.reduce((m, g) => (g.updated_at > m ? g.updated_at : m), '');
   if (maxUpdated) {
@@ -561,6 +598,42 @@ function render() {
   } else {
     document.getElementById('sync-time').textContent = '实时同步';
   }
+}
+
+function updateKpiActiveStates() {
+  document.querySelectorAll('.kpi-card').forEach(card => {
+    const stage = card.dataset.stage === 'all' ? 'all' : parseInt(card.dataset.stage, 10);
+    card.classList.toggle('active', selectedStage !== null && stage === selectedStage);
+  });
+}
+
+function renderKpiDetail() {
+  const panel = document.getElementById('kpi-detail');
+  if (selectedStage === null) {
+    panel.style.display = 'none';
+    panel.innerHTML = '';
+    return;
+  }
+  const list = selectedStage === 'all' ? groups.slice() : groups.filter(g => g.stage === selectedStage);
+  list.sort((a, b) => a.subject.localeCompare(b.subject, 'zh') || a.sort_order - b.sort_order);
+  const title = selectedStage === 'all' ? '全部课题组' : STAGE_LABEL[selectedStage] + ' 阶段的课题组';
+  const chips = list.map(g => {
+    const name = g.group_name ? `${g.subject}·${g.group_name}（${g.lead}）` : `${g.subject}（${g.lead}）`;
+    return `<span class="kpi-detail-chip">${escapeHtml(name)}</span>`;
+  }).join('') || '<span class="kpi-detail-chip">暂无</span>';
+  panel.innerHTML = `<p class="kpi-detail-title">${title} · 共 ${list.length} 个</p><div class="kpi-detail-list">${chips}</div>`;
+  panel.style.display = 'block';
+}
+
+function initKpiCards() {
+  document.querySelectorAll('.kpi-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const stage = card.dataset.stage === 'all' ? 'all' : parseInt(card.dataset.stage, 10);
+      selectedStage = selectedStage === stage ? null : stage;
+      updateKpiActiveStates();
+      renderKpiDetail();
+    });
+  });
 }
 
 function attachHandlers() {
@@ -648,6 +721,7 @@ supabase
   })
   .subscribe();
 
+initKpiCards();
 loadData();
 </script>
 </body>
