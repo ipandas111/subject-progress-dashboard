@@ -17,6 +17,7 @@
     --text-muted: #9c9a8d;
 
     --gray-fill: #888780;
+    --gray-pale: #cfccc0;
     --gray-bg: #f1efe8;
     --gray-text: #444441;
     --gray-border: #b4b2a9;
@@ -85,7 +86,7 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: var(--gray-fill);
+    background: var(--green-fill);
     display: inline-block;
   }
 
@@ -183,15 +184,21 @@
   .row {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     padding: 9px 0;
     border-top: 1px solid var(--border);
   }
 
   .row .group-name {
-    flex: 0 0 170px;
+    flex: 0 0 160px;
     font-size: 13px;
     color: var(--text-secondary);
+  }
+
+  .single-body {
+    display: flex;
+    align-items: center;
+    gap: 10px;
   }
 
   .track-wrap {
@@ -199,7 +206,7 @@
     display: flex;
     align-items: center;
     gap: 5px;
-    min-width: 120px;
+    min-width: 100px;
   }
 
   .seg {
@@ -228,6 +235,52 @@
   .badge-amber { background: var(--amber-bg); color: var(--amber-text); }
   .badge-green { background: var(--green-bg); color: var(--green-text); }
 
+  .edit-btn {
+    flex: 0 0 auto;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    border-radius: var(--radius);
+    color: var(--text-secondary);
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .edit-btn:hover { background: var(--surface-muted); }
+
+  .edit-form {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .edit-form select {
+    font-size: 13px;
+    padding: 5px 8px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--text-primary);
+  }
+
+  .edit-form button {
+    font-size: 13px;
+    padding: 5px 12px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    cursor: pointer;
+  }
+
+  .edit-form button.save-btn { background: var(--green-fill); color: #fff; border-color: var(--green-fill); }
+  .save-btn:disabled { opacity: .6; cursor: default; }
+  .cancel-btn:hover { background: var(--surface-muted); }
+
   .single-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -240,7 +293,11 @@
     margin: 0 0 10px;
   }
 
-  .single-card .track-wrap { margin-bottom: 8px; }
+  .empty-msg {
+    color: var(--text-muted);
+    font-size: 13px;
+    padding: 1rem 0;
+  }
 
   footer {
     margin-top: 2.5rem;
@@ -252,10 +309,9 @@
   @media (max-width: 720px) {
     .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .single-grid { grid-template-columns: 1fr; }
-    .row { flex-wrap: wrap; }
+    .row, .single-body { flex-wrap: wrap; }
     .row .group-name { flex: 1 1 100%; }
-    .track-wrap { flex: 1 1 auto; order: 2; }
-    .badge { order: 3; }
+    .track-wrap { flex: 1 1 auto; }
   }
 </style>
 </head>
@@ -264,25 +320,25 @@
 
   <div class="header">
     <div class="title"><i class="ti ti-chart-bar"></i>六科目课题进度看板</div>
-    <div class="sync-pill"><span class="dot"></span>静态数据 · 更新于 2026-07-14</div>
+    <div class="sync-pill"><span class="dot"></span><span id="sync-time">连接中…</span></div>
   </div>
 
   <div class="kpi-grid">
     <div class="kpi-card">
       <p class="label">课题组总数</p>
-      <p class="value">14</p>
+      <p class="value" id="kpi-total">–</p>
     </div>
     <div class="kpi-card">
       <p class="label"><span class="dot-sm" style="background:var(--gray-fill);"></span>沟通预算</p>
-      <p class="value">7</p>
+      <p class="value" id="kpi-stage1">–</p>
     </div>
     <div class="kpi-card">
       <p class="label"><span class="dot-sm" style="background:var(--amber-fill);"></span>建设目录</p>
-      <p class="value">1</p>
+      <p class="value" id="kpi-stage2">–</p>
     </div>
     <div class="kpi-card">
       <p class="label"><span class="dot-sm" style="background:var(--green-fill);"></span>初设目录</p>
-      <p class="value">6</p>
+      <p class="value" id="kpi-stage3">–</p>
     </div>
   </div>
 
@@ -300,197 +356,214 @@
     </div>
   </div>
 
-  <div class="cards">
-
-    <div class="card">
-      <div class="card-head"><i class="ti ti-flask"></i><span class="name">化学</span><span class="count">6 个课题组</span></div>
-
-      <div class="row">
-        <span class="group-name">f族（刘志博）</span>
-        <div class="track-wrap">
-          <div class="seg"><span style="background:var(--gray-fill);"></span><span style="background:var(--gray-fill);"></span></div>
-          <span class="arrow"><i class="ti ti-arrow-right"></i></span>
-          <div class="seg"><span></span><span></span></div>
-          <span class="arrow"><i class="ti ti-arrow-right"></i></span>
-          <div class="seg"><span></span><span></span></div>
-        </div>
-        <span class="badge badge-gray">沟通预算完成</span>
-      </div>
-
-      <div class="row">
-        <span class="group-name">碳材料（赵晓续）</span>
-        <div class="track-wrap">
-          <div class="seg"><span style="background:var(--gray-fill);"></span><span style="background:var(--gray-fill);"></span></div>
-          <span class="arrow"><i class="ti ti-arrow-right"></i></span>
-          <div class="seg"><span style="background:var(--amber-fill);"></span><span style="background:var(--amber-fill);"></span></div>
-          <span class="arrow"><i class="ti ti-arrow-right"></i></span>
-          <div class="seg"><span style="background:var(--green-fill);"></span><span style="background:var(--green-pale);"></span></div>
-        </div>
-        <span class="badge badge-green">初设目录中</span>
-      </div>
-
-      <div class="row">
-        <span class="group-name">催化（徐冰君）</span>
-        <div class="track-wrap">
-          <div class="seg"><span style="background:var(--gray-fill);"></span><span style="background:var(--gray-fill);"></span></div>
-          <span class="arrow"><i class="ti ti-arrow-right"></i></span>
-          <div class="seg"><span></span><span></span></div>
-          <span class="arrow"><i class="ti ti-arrow-right"></i></span>
-          <div class="seg"><span></span><span></span></div>
-        </div>
-        <span class="badge badge-gray">沟通预算完成</span>
-      </div>
-
-      <div class="row">
-        <span class="group-name">生物医药（雷晓光）</span>
-        <div class="track-wrap">
-          <div class="seg"><span style="background:var(--gray-fill);"></span><span style="background:var(--gray-fill);"></span></div>
-          <span class="arrow"><i class="ti ti-arrow-right"></i></span>
-          <div class="seg"><span style="background:var(--amber-fill);"></span><span style="background:var(--amber-fill);"></span></div>
-          <span class="arrow"><i class="ti ti-arrow-right"></i></span>
-          <div class="seg"><span style="background:var(--green-fill);"></span><span style="background:var(--green-pale);"></span></div>
-        </div>
-        <span class="badge badge-green">初设目录中</span>
-      </div>
-
-      <div class="row">
-        <span class="group-name">能源材料（周欢萍）</span>
-        <div class="track-wrap">
-          <div class="seg"><span style="background:var(--gray-fill);"></span><span style="background:var(--gray-fill);"></span></div>
-          <span class="arrow"><i class="ti ti-arrow-right"></i></span>
-          <div class="seg"><span></span><span></span></div>
-          <span class="arrow"><i class="ti ti-arrow-right"></i></span>
-          <div class="seg"><span></span><span></span></div>
-        </div>
-        <span class="badge badge-gray">沟通预算完成</span>
-      </div>
-
-      <div class="row">
-        <span class="group-name">教育教学（高珍+地理）</span>
-        <div class="track-wrap">
-          <div class="seg"><span style="background:var(--gray-fill);"></span><span style="background:var(--gray-fill);"></span></div>
-          <span class="arrow"><i class="ti ti-arrow-right"></i></span>
-          <div class="seg"><span></span><span></span></div>
-          <span class="arrow"><i class="ti ti-arrow-right"></i></span>
-          <div class="seg"><span></span><span></span></div>
-        </div>
-        <span class="badge badge-gray">沟通预算完成</span>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-head"><i class="ti ti-world"></i><span class="name">地理</span><span class="count">3 个课题组</span></div>
-
-      <div class="row">
-        <span class="group-name">地球世界模型（李嘉琪）</span>
-        <div class="track-wrap">
-          <div class="seg"><span style="background:var(--gray-fill);"></span><span style="background:var(--gray-fill);"></span></div>
-          <span class="arrow"><i class="ti ti-arrow-right"></i></span>
-          <div class="seg"><span style="background:var(--amber-fill);"></span><span style="background:var(--amber-fill);"></span></div>
-          <span class="arrow"><i class="ti ti-arrow-right"></i></span>
-          <div class="seg"><span style="background:var(--green-fill);"></span><span style="background:var(--green-pale);"></span></div>
-        </div>
-        <span class="badge badge-green">初设目录中</span>
-      </div>
-
-      <div class="row">
-        <span class="group-name">地表环境与城市（刘瑜、张帆）</span>
-        <div class="track-wrap">
-          <div class="seg"><span style="background:var(--gray-fill);"></span><span style="background:var(--gray-fill);"></span></div>
-          <span class="arrow"><i class="ti ti-arrow-right"></i></span>
-          <div class="seg"><span style="background:var(--amber-fill);"></span><span style="background:var(--amber-fill);"></span></div>
-          <span class="arrow"><i class="ti ti-arrow-right"></i></span>
-          <div class="seg"><span style="background:var(--green-fill);"></span><span style="background:var(--green-pale);"></span></div>
-        </div>
-        <span class="badge badge-green">初设目录中</span>
-      </div>
-
-      <div class="row">
-        <span class="group-name">教育（沈）</span>
-        <div class="track-wrap">
-          <div class="seg"><span style="background:var(--gray-fill);"></span><span style="background:var(--gray-fill);"></span></div>
-          <span class="arrow"><i class="ti ti-arrow-right"></i></span>
-          <div class="seg"><span style="background:var(--amber-fill);"></span><span style="background:var(--amber-fill);"></span></div>
-          <span class="arrow"><i class="ti ti-arrow-right"></i></span>
-          <div class="seg"><span style="background:var(--green-fill);"></span><span style="background:var(--green-pale);"></span></div>
-        </div>
-        <span class="badge badge-green">初设目录中</span>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-head"><i class="ti ti-leaf"></i><span class="name">生物</span><span class="count">2 个课题组</span></div>
-
-      <div class="row">
-        <span class="group-name">生命（高歌）</span>
-        <div class="track-wrap">
-          <div class="seg"><span style="background:var(--gray-fill);"></span><span style="background:var(--gray-fill);"></span></div>
-          <span class="arrow"><i class="ti ti-arrow-right"></i></span>
-          <div class="seg"><span></span><span></span></div>
-          <span class="arrow"><i class="ti ti-arrow-right"></i></span>
-          <div class="seg"><span></span><span></span></div>
-        </div>
-        <span class="badge badge-gray">沟通预算完成</span>
-      </div>
-
-      <div class="row">
-        <span class="group-name">医学（张路霞/郭欣）</span>
-        <div class="track-wrap">
-          <div class="seg"><span style="background:var(--gray-fill);"></span><span style="background:var(--gray-fill);"></span></div>
-          <span class="arrow"><i class="ti ti-arrow-right"></i></span>
-          <div class="seg"><span></span><span></span></div>
-          <span class="arrow"><i class="ti ti-arrow-right"></i></span>
-          <div class="seg"><span></span><span></span></div>
-        </div>
-        <span class="badge badge-gray">沟通预算完成</span>
-      </div>
-    </div>
-
-    <div class="single-grid">
-      <div class="card single-card">
-        <div class="card-head"><i class="ti ti-math-function"></i><span class="name">数学</span></div>
-        <p class="lead">董斌、文再文</p>
-        <div class="track-wrap">
-          <div class="seg"><span style="background:var(--gray-fill);"></span><span style="background:var(--gray-fill);"></span></div>
-          <span class="arrow"><i class="ti ti-arrow-right"></i></span>
-          <div class="seg"><span style="background:var(--amber-fill);"></span><span style="background:var(--amber-fill);"></span></div>
-          <span class="arrow"><i class="ti ti-arrow-right"></i></span>
-          <div class="seg"><span style="background:var(--green-fill);"></span><span style="background:var(--green-pale);"></span></div>
-        </div>
-        <span class="badge badge-green">初设目录中</span>
-      </div>
-
-      <div class="card single-card">
-        <div class="card-head"><i class="ti ti-atom"></i><span class="name">物理</span></div>
-        <p class="lead">朱华星</p>
-        <div class="track-wrap">
-          <div class="seg"><span style="background:var(--gray-fill);"></span><span style="background:var(--gray-fill);"></span></div>
-          <span class="arrow"><i class="ti ti-arrow-right"></i></span>
-          <div class="seg"><span style="background:var(--amber-fill);"></span><span style="background:var(--amber-pale);"></span></div>
-          <span class="arrow"><i class="ti ti-arrow-right"></i></span>
-          <div class="seg"><span></span><span></span></div>
-        </div>
-        <span class="badge badge-amber">建设目录中</span>
-      </div>
-
-      <div class="card single-card">
-        <div class="card-head"><i class="ti ti-telescope"></i><span class="name">天文</span></div>
-        <p class="lead">王力乐</p>
-        <div class="track-wrap">
-          <div class="seg"><span style="background:var(--gray-fill);"></span><span style="background:var(--gray-fill);"></span></div>
-          <span class="arrow"><i class="ti ti-arrow-right"></i></span>
-          <div class="seg"><span></span><span></span></div>
-          <span class="arrow"><i class="ti ti-arrow-right"></i></span>
-          <div class="seg"><span></span><span></span></div>
-        </div>
-        <span class="badge badge-gray">沟通预算完成</span>
-      </div>
-    </div>
-
+  <div class="cards" id="cards-container">
+    <p class="empty-msg">正在加载课题组数据…</p>
   </div>
 
-  <footer>六科目课题进度看板 · 数据为手动维护的静态内容</footer>
+  <footer>六科目课题进度看板 · 点击各课题组右侧的编辑图标即可更新进度，改动会实时同步给所有人</footer>
 
 </div>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const SUPABASE_URL = 'https://zupdhiqydqjwmqegqczz.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_xn0bVmqERGws5Rr2o08bSA_tS7yrm1O';
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const SUBJECT_ICON = {
+  '化学': 'ti-flask',
+  '地理': 'ti-world',
+  '生物': 'ti-leaf',
+  '数学': 'ti-math-function',
+  '物理': 'ti-atom',
+  '天文': 'ti-telescope'
+};
+const MULTI_SUBJECTS = ['化学', '地理', '生物'];
+const SINGLE_SUBJECTS = ['数学', '物理', '天文'];
+const STAGE_LABEL = { 1: '沟通预算', 2: '建设目录', 3: '初设目录' };
+
+let groups = [];
+let editingId = null;
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function fillVar(stage) {
+  return stage === 1 ? 'var(--gray-fill)' : stage === 2 ? 'var(--amber-fill)' : 'var(--green-fill)';
+}
+function paleVar(stage) {
+  return stage === 1 ? 'var(--gray-pale)' : stage === 2 ? 'var(--amber-pale)' : 'var(--green-pale)';
+}
+function badgeClass(stage) {
+  return stage === 1 ? 'badge-gray' : stage === 2 ? 'badge-amber' : 'badge-green';
+}
+function badgeText(stage, subStatus) {
+  return STAGE_LABEL[stage] + (subStatus === 'done' ? '完成' : '中');
+}
+
+function trackHTML(stage, subStatus) {
+  const parts = [1, 2, 3].map(i => {
+    let left = 'transparent';
+    let right = 'transparent';
+    if (i < stage) {
+      left = right = fillVar(i);
+    } else if (i === stage) {
+      left = fillVar(i);
+      right = subStatus === 'done' ? fillVar(i) : paleVar(i);
+    }
+    return `<div class="seg"><span style="background:${left};"></span><span style="background:${right};"></span></div>`;
+  });
+  const arrow = '<span class="arrow"><i class="ti ti-arrow-right"></i></span>';
+  return parts.join(arrow);
+}
+
+function rowViewHTML(item) {
+  return `
+    <div class="track-wrap">${trackHTML(item.stage, item.sub_status)}</div>
+    <span class="badge ${badgeClass(item.stage)}">${badgeText(item.stage, item.sub_status)}</span>
+    <button class="edit-btn" data-id="${item.id}" aria-label="编辑进度"><i class="ti ti-edit"></i></button>
+  `;
+}
+
+function rowEditHTML(item) {
+  return `
+    <div class="edit-form">
+      <select class="stage-select" data-id="${item.id}">
+        <option value="1" ${item.stage === 1 ? 'selected' : ''}>沟通预算</option>
+        <option value="2" ${item.stage === 2 ? 'selected' : ''}>建设目录</option>
+        <option value="3" ${item.stage === 3 ? 'selected' : ''}>初设目录</option>
+      </select>
+      <select class="status-select" data-id="${item.id}">
+        <option value="ing" ${item.sub_status === 'ing' ? 'selected' : ''}>进行中</option>
+        <option value="done" ${item.sub_status === 'done' ? 'selected' : ''}>已完成</option>
+      </select>
+      <button class="save-btn" data-id="${item.id}">保存</button>
+      <button class="cancel-btn" data-id="${item.id}">取消</button>
+    </div>
+  `;
+}
+
+function multiRowHTML(item) {
+  const body = editingId === item.id ? rowEditHTML(item) : rowViewHTML(item);
+  const nameLabel = item.group_name ? `${item.group_name}（${item.lead}）` : item.lead;
+  return `<div class="row">
+    <span class="group-name">${escapeHtml(nameLabel)}</span>
+    ${body}
+  </div>`;
+}
+
+function multiCardHTML(subject, items) {
+  const rows = items.map(multiRowHTML).join('');
+  return `<div class="card">
+    <div class="card-head"><i class="ti ${SUBJECT_ICON[subject]}"></i><span class="name">${subject}</span><span class="count">${items.length} 个课题组</span></div>
+    ${rows}
+  </div>`;
+}
+
+function singleCardHTML(subject, item) {
+  const body = editingId === item.id ? rowEditHTML(item) : rowViewHTML(item);
+  return `<div class="card single-card">
+    <div class="card-head"><i class="ti ${SUBJECT_ICON[subject]}"></i><span class="name">${subject}</span></div>
+    <p class="lead">${escapeHtml(item.lead)}</p>
+    <div class="single-body">${body}</div>
+  </div>`;
+}
+
+function render() {
+  const bySubject = {};
+  groups.forEach(g => { (bySubject[g.subject] = bySubject[g.subject] || []).push(g); });
+  Object.values(bySubject).forEach(list => list.sort((a, b) => a.sort_order - b.sort_order));
+
+  const total = groups.length;
+  document.getElementById('kpi-total').textContent = total;
+  document.getElementById('kpi-stage1').textContent = groups.filter(g => g.stage === 1).length;
+  document.getElementById('kpi-stage2').textContent = groups.filter(g => g.stage === 2).length;
+  document.getElementById('kpi-stage3').textContent = groups.filter(g => g.stage === 3).length;
+
+  let html = '';
+  MULTI_SUBJECTS.forEach(s => {
+    if (bySubject[s] && bySubject[s].length) html += multiCardHTML(s, bySubject[s]);
+  });
+  html += '<div class="single-grid">';
+  SINGLE_SUBJECTS.forEach(s => {
+    if (bySubject[s] && bySubject[s][0]) html += singleCardHTML(s, bySubject[s][0]);
+  });
+  html += '</div>';
+
+  document.getElementById('cards-container').innerHTML = html || '<p class="empty-msg">暂无数据</p>';
+  attachHandlers();
+
+  const maxUpdated = groups.reduce((m, g) => (g.updated_at > m ? g.updated_at : m), '');
+  if (maxUpdated) {
+    const d = new Date(maxUpdated);
+    document.getElementById('sync-time').textContent = '实时同步 · 最近更新 ' + d.toLocaleString('zh-CN', { hour12: false });
+  } else {
+    document.getElementById('sync-time').textContent = '实时同步';
+  }
+}
+
+function attachHandlers() {
+  document.querySelectorAll('.edit-btn').forEach(btn => {
+    btn.addEventListener('click', () => { editingId = btn.dataset.id; render(); });
+  });
+  document.querySelectorAll('.cancel-btn').forEach(btn => {
+    btn.addEventListener('click', () => { editingId = null; render(); });
+  });
+  document.querySelectorAll('.save-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      const stageVal = parseInt(document.querySelector(`.stage-select[data-id="${id}"]`).value, 10);
+      const statusVal = document.querySelector(`.status-select[data-id="${id}"]`).value;
+      btn.disabled = true;
+      btn.textContent = '保存中';
+      const { error } = await supabase.rpc('update_group_progress', {
+        p_id: id, p_stage: stageVal, p_sub_status: statusVal
+      });
+      if (error) {
+        alert('保存失败：' + error.message);
+        btn.disabled = false;
+        btn.textContent = '保存';
+        return;
+      }
+      const idx = groups.findIndex(g => g.id === id);
+      if (idx >= 0) {
+        groups[idx] = { ...groups[idx], stage: stageVal, sub_status: statusVal, updated_at: new Date().toISOString() };
+      }
+      editingId = null;
+      render();
+    });
+  });
+}
+
+async function loadData() {
+  const { data, error } = await supabase.from('groups').select('*');
+  if (error) {
+    document.getElementById('cards-container').innerHTML = '<p class="empty-msg">数据加载失败，请刷新重试。</p>';
+    return;
+  }
+  groups = data;
+  render();
+}
+
+supabase
+  .channel('groups-changes')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'groups' }, payload => {
+    const incoming = payload.new && Object.keys(payload.new).length ? payload.new : payload.old;
+    const idx = groups.findIndex(g => g.id === incoming.id);
+    if (payload.eventType === 'DELETE') {
+      if (idx >= 0) groups.splice(idx, 1);
+    } else if (idx >= 0) {
+      groups[idx] = payload.new;
+    } else {
+      groups.push(payload.new);
+    }
+    if (editingId === null || editingId !== incoming.id) render();
+  })
+  .subscribe();
+
+loadData();
+</script>
 </body>
 </html>
