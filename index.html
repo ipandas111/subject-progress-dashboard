@@ -96,6 +96,41 @@
     display: inline-block;
   }
 
+  .top-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 1.25rem;
+  }
+
+  .top-link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px 14px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--text-primary);
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .top-link-btn:hover { background: var(--surface-muted); }
+  .top-link-btn i { font-size: 15px; color: var(--green-fill); }
+
+  .top-link-btn--pending { color: var(--text-muted); }
+  .top-link-btn--pending i { color: var(--text-muted); }
+
+  .pending-tag {
+    font-size: 11px;
+    padding: 1px 7px;
+    border-radius: var(--radius);
+    background: var(--surface-muted);
+    color: var(--text-muted);
+  }
+
   .kpi-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -375,6 +410,15 @@
   <div class="header">
     <div class="title"><i class="ti ti-chart-bar"></i>六科目课题进度看板</div>
     <div class="sync-pill"><span class="dot"></span><span id="sync-time">连接中…</span></div>
+  </div>
+
+  <div class="top-links">
+    <a class="top-link-btn" href="https://ucoyxk075n.feishu.cn/wiki/FU8nwNTu2ixIwckv9qMcsiL0nJe" target="_blank" rel="noopener noreferrer">
+      <i class="ti ti-folder" aria-hidden="true"></i>建设目录库
+    </a>
+    <button class="top-link-btn top-link-btn--pending" type="button" id="pending-link-btn">
+      <i class="ti ti-report-money" aria-hidden="true"></i>初设需求投资库<span class="pending-tag">建设中</span>
+    </button>
   </div>
 
   <div class="kpi-grid">
@@ -709,6 +753,10 @@ async function loadData() {
 // waiting on the Supabase module fetch below — otherwise clicks during that
 // network round-trip would silently do nothing.
 initKpiCards();
+
+document.getElementById('pending-link-btn').addEventListener('click', () => {
+  alert('初设需求投资库正在建设中，链接稍后补充');
+});
 
 async function boot() {
   const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
