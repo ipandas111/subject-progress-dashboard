@@ -35,8 +35,10 @@
     --green-bg: #eaf3de;
     --green-text: #27500a;
 
-    --blue-bg: #e6f1fb;
-    --blue-text: #0c447c;
+	    --blue-bg: #e6f1fb;
+	    --blue-pale: #cfe3f6;
+	    --blue-fill: #2f78b8;
+	    --blue-text: #0c447c;
 
     --track-empty: #e4e1d7;
     --radius: 10px;
@@ -119,17 +121,6 @@
   }
   .top-link-btn:hover { background: var(--surface-muted); }
   .top-link-btn i { font-size: 15px; color: var(--green-fill); }
-
-  .top-link-btn--pending { color: var(--text-muted); }
-  .top-link-btn--pending i { color: var(--text-muted); }
-
-  .pending-tag {
-    font-size: 11px;
-    padding: 1px 7px;
-    border-radius: var(--radius);
-    background: var(--surface-muted);
-    color: var(--text-muted);
-  }
 
   .kpi-grid {
     display: grid;
@@ -268,12 +259,6 @@
     color: var(--text-secondary);
   }
 
-  .single-body {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
   .track-wrap {
     flex: 1;
     display: flex;
@@ -309,13 +294,101 @@
   .badge-green { background: var(--green-bg); color: var(--green-text); }
   .badge-blue { background: var(--blue-bg); color: var(--blue-text); }
 
-  .branch-row .group-name {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    color: var(--text-muted);
-  }
-  .branch-row .group-name i { font-size: 13px; }
+	  .branch-row {
+	    position: relative;
+	    padding-left: 24px;
+	    border-top-style: dashed;
+	    background: linear-gradient(90deg, rgba(230, 241, 251, 0.45), transparent 46%);
+	  }
+	  .branch-row::before {
+	    content: "";
+	    position: absolute;
+	    left: 8px;
+	    top: -1px;
+	    bottom: 50%;
+	    border-left: 1px solid var(--border-strong);
+	  }
+	  .branch-row::after {
+	    content: "";
+	    position: absolute;
+	    left: 8px;
+	    top: 50%;
+	    width: 13px;
+	    border-top: 1px solid var(--border-strong);
+	  }
+
+	  .branch-row .group-name {
+	    display: flex;
+	    align-items: center;
+	    gap: 5px;
+	    color: var(--blue-text);
+	    font-weight: 500;
+	  }
+	  .branch-row .group-name i {
+	    font-size: 13px;
+	    color: var(--blue-fill);
+	  }
+
+	  .highlight-track {
+	    flex: 1;
+	    display: flex;
+	    align-items: center;
+	    gap: 8px;
+	    min-width: 120px;
+	  }
+
+	  .highlight-rail {
+	    flex: 1;
+	    position: relative;
+	    height: 6px;
+	    overflow: hidden;
+	    border-radius: 3px;
+	    background: var(--surface-muted);
+	  }
+	  .highlight-rail::before {
+	    content: "";
+	    position: absolute;
+	    inset: 0 auto 0 0;
+	    width: var(--highlight-progress, 18%);
+	    border-radius: inherit;
+	    background: linear-gradient(90deg, var(--blue-pale), var(--blue-fill));
+	  }
+	  .highlight-track--todo .highlight-rail::before {
+	    background: var(--border-strong);
+	    opacity: 0.7;
+	  }
+	  .highlight-track--ing .highlight-rail::after {
+	    content: "";
+	    position: absolute;
+	    inset: 0;
+	    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.75), transparent);
+	    animation: highlight-sweep 1.8s ease-in-out infinite;
+	  }
+
+	  .highlight-pulse {
+	    width: 8px;
+	    height: 8px;
+	    border-radius: 50%;
+	    background: var(--blue-fill);
+	    box-shadow: 0 0 0 3px var(--blue-bg);
+	  }
+	  .highlight-track--todo .highlight-pulse {
+	    background: var(--border-strong);
+	    box-shadow: 0 0 0 3px var(--surface-muted);
+	  }
+	  .highlight-track--ing .highlight-pulse {
+	    animation: highlight-pulse 1.6s ease-in-out infinite;
+	  }
+
+	  @keyframes highlight-sweep {
+	    from { transform: translateX(-100%); }
+	    to { transform: translateX(100%); }
+	  }
+
+	  @keyframes highlight-pulse {
+	    0%, 100% { transform: scale(1); opacity: 0.85; }
+	    50% { transform: scale(1.35); opacity: 1; }
+	  }
 
   .legend-note {
     font-size: 12px;
@@ -370,18 +443,6 @@
   .save-btn:disabled { opacity: .6; cursor: default; }
   .cancel-btn:hover { background: var(--surface-muted); }
 
-  .single-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
-  }
-
-  .single-card .lead {
-    font-size: 12px;
-    color: var(--text-muted);
-    margin: 0 0 10px;
-  }
-
   .empty-msg {
     color: var(--text-muted);
     font-size: 13px;
@@ -397,8 +458,7 @@
 
   @media (max-width: 720px) {
     .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .single-grid { grid-template-columns: 1fr; }
-    .row, .single-body { flex-wrap: wrap; }
+    .row { flex-wrap: wrap; }
     .row .group-name { flex: 1 1 100%; }
     .track-wrap { flex: 1 1 auto; }
   }
@@ -412,16 +472,16 @@
     <div class="sync-pill"><span class="dot"></span><span id="sync-time">连接中…</span></div>
   </div>
 
-  <div class="top-links">
-    <a class="top-link-btn" href="https://ucoyxk075n.feishu.cn/wiki/FU8nwNTu2ixIwckv9qMcsiL0nJe" target="_blank" rel="noopener noreferrer">
-      <i class="ti ti-folder" aria-hidden="true"></i>建设目录库
-    </a>
-    <button class="top-link-btn top-link-btn--pending" type="button" id="pending-link-btn">
-      <i class="ti ti-report-money" aria-hidden="true"></i>初设需求投资库<span class="pending-tag">建设中</span>
-    </button>
-    <a class="top-link-btn" href="schedule.html">
-      <i class="ti ti-calendar" aria-hidden="true"></i>排期
-    </a>
+	  <div class="top-links">
+	    <a class="top-link-btn" href="https://ucoyxk075n.feishu.cn/wiki/FU8nwNTu2ixIwckv9qMcsiL0nJe" target="_blank" rel="noopener noreferrer">
+	      <i class="ti ti-folder" aria-hidden="true"></i>建设目录与可研需求明细库
+	    </a>
+	    <a class="top-link-btn" href="https://ucoyxk075n.feishu.cn/docx/Hp7IdTp8EoDVM9xZ77vcxJn8nTh" target="_blank" rel="noopener noreferrer">
+	      <i class="ti ti-sparkles" aria-hidden="true"></i>亮点成果
+	    </a>
+	    <a class="top-link-btn" href="schedule.html">
+	      <i class="ti ti-calendar" aria-hidden="true"></i>排期
+	    </a>
   </div>
 
   <div class="kpi-grid">
@@ -459,7 +519,7 @@
     </div>
   </div>
 
-  <p class="legend-note">进入初设目录阶段后，「建设成果梳理」作为并行模块与其同步推进，独立记录进度</p>
+  <p class="legend-note">进入初设目录阶段后，「亮点汇总」作为并行模块与其同步推进，独立记录进度</p>
 
   <div class="cards" id="cards-container">
     <p class="empty-msg">正在加载课题组数据…</p>
@@ -482,9 +542,13 @@ const SUBJECT_ICON = {
   '物理': 'ti-atom',
   '天文': 'ti-telescope'
 };
-const MULTI_SUBJECTS = ['化学', '地理', '生物'];
-const SINGLE_SUBJECTS = ['数学', '物理', '天文'];
+const SUBJECTS = ['化学', '地理', '生物', '数学', '物理', '天文'];
 const STAGE_LABEL = { 1: '沟通预算', 2: '建设目录', 3: '初设目录' };
+const GROUP_LABEL_OVERRIDES = [
+  { subject: '地理', groupName: '教育', lead: '沈', label: '地理教育（沈冰）' },
+  { subject: '地理', groupName: '地理教育', lead: '沈', label: '地理教育（沈冰）' },
+  { subject: '化学', groupName: '教育教学', label: '教育教学（高珍）' }
+];
 
 let groups = [];
 let editingKey = null;
@@ -505,6 +569,16 @@ function badgeClass(stage) {
 }
 function badgeText(stage, subStatus) {
   return STAGE_LABEL[stage] + (subStatus === 'done' ? '完成' : '中');
+}
+
+function groupDisplayName(item) {
+  const override = GROUP_LABEL_OVERRIDES.find(rule => (
+    item.subject === rule.subject &&
+    item.group_name === rule.groupName &&
+    (rule.lead === undefined || item.lead === rule.lead)
+  ));
+  if (override) return override.label;
+  return item.group_name ? `${item.group_name}（${item.lead}）` : item.lead;
 }
 
 function trackHTML(stage, subStatus) {
@@ -553,10 +627,15 @@ function achvViewHTML(item) {
   const status = item.achievement_status;
   const cls = status ? 'badge-blue' : 'badge-gray';
   const label = status === 'done' ? '已完成' : status === 'ing' ? '进行中' : '未开始';
+  const statusClass = status === 'done' ? 'done' : status === 'ing' ? 'ing' : 'todo';
+  const progress = status === 'done' ? '100%' : status === 'ing' ? '58%' : '18%';
   return `
-    <div class="track-wrap"></div>
+    <div class="highlight-track highlight-track--${statusClass}" aria-hidden="true">
+      <span class="highlight-rail" style="--highlight-progress:${progress};"></span>
+      <span class="highlight-pulse"></span>
+    </div>
     <span class="badge ${cls}">${label}</span>
-    <button class="edit-btn" data-id="${item.id}" data-field="achv" aria-label="编辑建设成果梳理进度"><i class="ti ti-edit"></i></button>
+    <button class="edit-btn" data-id="${item.id}" data-field="achv" aria-label="编辑亮点汇总进度"><i class="ti ti-edit"></i></button>
   `;
 }
 
@@ -578,14 +657,14 @@ function achvEditHTML(item) {
 function branchRowHTML(item) {
   const body = editingKey === `${item.id}|achv` ? achvEditHTML(item) : achvViewHTML(item);
   return `<div class="row branch-row">
-    <span class="group-name"><i class="ti ti-corner-down-right"></i>建设成果梳理</span>
+    <span class="group-name"><i class="ti ti-corner-down-right"></i>亮点汇总</span>
     ${body}
   </div>`;
 }
 
 function multiRowHTML(item) {
   const body = editingKey === `${item.id}|main` ? mainEditHTML(item) : mainViewHTML(item);
-  const nameLabel = item.group_name ? `${item.group_name}（${item.lead}）` : item.lead;
+  const nameLabel = groupDisplayName(item);
   let html = `<div class="row">
     <span class="group-name">${escapeHtml(nameLabel)}</span>
     ${body}
@@ -602,17 +681,6 @@ function multiCardHTML(subject, items) {
   </div>`;
 }
 
-function singleCardHTML(subject, item) {
-  const body = editingKey === `${item.id}|main` ? mainEditHTML(item) : mainViewHTML(item);
-  const branch = item.stage === 3 ? branchRowHTML(item) : '';
-  return `<div class="card single-card">
-    <div class="card-head"><i class="ti ${SUBJECT_ICON[subject]}"></i><span class="name">${subject}</span></div>
-    <p class="lead">${escapeHtml(item.lead)}</p>
-    <div class="single-body">${body}</div>
-    ${branch}
-  </div>`;
-}
-
 function render() {
   const bySubject = {};
   groups.forEach(g => { (bySubject[g.subject] = bySubject[g.subject] || []).push(g); });
@@ -625,14 +693,9 @@ function render() {
   document.getElementById('kpi-stage3').textContent = groups.filter(g => g.stage === 3).length;
 
   let html = '';
-  MULTI_SUBJECTS.forEach(s => {
+  SUBJECTS.forEach(s => {
     if (bySubject[s] && bySubject[s].length) html += multiCardHTML(s, bySubject[s]);
   });
-  html += '<div class="single-grid">';
-  SINGLE_SUBJECTS.forEach(s => {
-    if (bySubject[s] && bySubject[s][0]) html += singleCardHTML(s, bySubject[s][0]);
-  });
-  html += '</div>';
 
   document.getElementById('cards-container').innerHTML = html || '<p class="empty-msg">暂无数据</p>';
   attachHandlers();
@@ -666,7 +729,7 @@ function renderKpiDetail() {
   list.sort((a, b) => a.subject.localeCompare(b.subject, 'zh') || a.sort_order - b.sort_order);
   const title = selectedStage === 'all' ? '全部课题组' : STAGE_LABEL[selectedStage] + ' 阶段的课题组';
   const chips = list.map(g => {
-    const name = g.group_name ? `${g.subject}·${g.group_name}（${g.lead}）` : `${g.subject}（${g.lead}）`;
+    const name = `${g.subject}·${groupDisplayName(g)}`;
     return `<span class="kpi-detail-chip">${escapeHtml(name)}</span>`;
   }).join('') || '<span class="kpi-detail-chip">暂无</span>';
   panel.innerHTML = `<p class="kpi-detail-title">${title} · 共 ${list.length} 个</p><div class="kpi-detail-list">${chips}</div>`;
@@ -756,10 +819,6 @@ async function loadData() {
 // waiting on the Supabase module fetch below — otherwise clicks during that
 // network round-trip would silently do nothing.
 initKpiCards();
-
-document.getElementById('pending-link-btn').addEventListener('click', () => {
-  alert('初设需求投资库正在建设中，链接稍后补充');
-});
 
 async function boot() {
   const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
